@@ -19,6 +19,8 @@ import rospy
 import message_filters
 import ros_numpy
 import tf
+import tf2_ros
+import tf2_geometry_msgs
 
 from sensor_msgs.msg import Image, CameraInfo, PointCloud2
 import sensor_msgs.point_cloud2 as pc2
@@ -161,17 +163,20 @@ class PointcloudProcess:
 
 
 class center_point:
-    def __init__(self, points_sub_topic, center_pub_topic):
+    def __init__(self, points_sub_topic, center_pub_topic, ar_frame):
         self.messages = deque([], 5)
         self.num_steps = 0
         self.pose = PoseStamped()
         self.pose.header.frame_id = "camera_depth_optical_frame"
+        self.ar_frame = ar_frame
 
         points_sub = message_filters.Subscriber(points_sub_topic, PointCloud2)
 
         self.center_pub = rospy.Publisher(center_pub_topic, PoseStamped, queue_size=10)
         
         ts = message_filters.ApproximateTimeSynchronizer([points_sub], 10, 0.1, allow_headerless=True)
+        self.tf_buffer = tf2_ros.Buffer()
+        self.listener = tf2_ros.TransformListener(self.tf_buffer)
         ts.registerCallback(self.callback)
 
     def callback(self, points_msg):
@@ -184,21 +189,22 @@ class center_point:
             for point in points:
                 count += 1
                 center = map(lambda x, y: x+y, center, point)
-            center = (center[0] / count, center[1] / count, center[2] / count)
-        except Exception as e:
-            rospy.logerr(e)
-            return
-        self.num_steps += 1
-        self.messages.appendleft(center)
-
-    def publish_once_from_queue(self):
-        if self.messages:
-            x, y, z = self.messages.pop()
+            x, y, z= (center[0] / count, center[1] / count, center[2] / count)
             self.pose.header.stamp = rospy.Time.now()
             self.pose.pose.position.x = x
             self.pose.pose.position.y = y
             self.pose.pose.position.z = z
-            self.center_pub.publish(self.pose)
+            output_pose = self.tf_buffer.transform(self.pose, self.ar_frame, rospy.Duration(1))
+        except Exception as e:
+            rospy.logerr(e)
+            return
+        self.num_steps += 1
+        self.messages.appendleft(output_pose)
+
+    def publish_once_from_queue(self):
+        if self.messages:
+            output_pose = self.messages.pop()
+            self.center_pub.publish(output_pose)
             print("Published center at timestamp:",
                    self.pose.header.stamp)
 
@@ -208,11 +214,13 @@ def main():
     POINTS_TOPIC = '/camera/depth/color/points'
     POINTS_PUB_TOPIC = 'segmented_points'
     CENTER_PUB_TOPIC = 'center_point'
+    camera_frame = 'camera_color_optical_frame'
+    table_frame = 'ar_marker_5'
 
     rospy.init_node('realsense_listener')
     process = PointcloudProcess(POINTS_TOPIC, RGB_IMAGE_TOPIC,
                                 CAM_INFO_TOPIC, POINTS_PUB_TOPIC)
-    centerer = center_point(POINTS_PUB_TOPIC, CENTER_PUB_TOPIC)
+    centerer = center_point(POINTS_PUB_TOPIC, CENTER_PUB_TOPIC, table_frame)
     r = rospy.Rate(1000)
 
     while not rospy.is_shutdown():
