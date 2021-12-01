@@ -36,8 +36,7 @@ def get_camera_matrix(camera_info_msg):
     return np.array(camera_info_msg.K).reshape((3,3))
 
 def numpy_to_image_msg(imageRGB):
-    return ros_numpy.msgify(Image, imageRGB, stamp=rospy.Time.now(),
-        frame_id='camera_image_isolated_frame')
+    return ros_numpy.msgify(Image, imageRGB, 'rgb8')
 
 class imageProcess:
     """
@@ -58,7 +57,7 @@ class imageProcess:
         self._bridge = CvBridge()
         self.listener = tf.TransformListener()
         
-        self.image_pub = rospy.Publisher('ball_image', Image, queue_size=10)
+        self.image_pub = rospy.Publisher(image_pub_topic, Image, queue_size=10)
         
         ts = message_filters.ApproximateTimeSynchronizer([image_sub, caminfo_sub],
                                                           10, 0.1, allow_headerless=True)
@@ -67,6 +66,7 @@ class imageProcess:
 
     def callback(self, image, info):
         try:
+            print('in the callback?')
             intrinsic_matrix = get_camera_matrix(info)
             rgb_image = ros_numpy.numpify(image)
         except Exception as e:
@@ -80,16 +80,16 @@ class imageProcess:
         if self.messages:
             print('starting to publish?')
             image, info = self.messages.pop()
-            isolated_ball_pixels = isolate_object_of_interest(image, info)
+            isolated_ball_pixels = isolate_object_of_interest(image)
             image_msg = numpy_to_image_msg(isolated_ball_pixels)
             self.image_pub.publish(image_msg)
             print("Published isolated ball pixel image at timestamp:",
-                   image_msg.header.stamp.secs)
+                   image_msg.header.secs)
 
 def main():
-    CAM_INFO_TOPIC = '/usb_cam/camera_info'
-    RGB_IMAGE_TOPIC = '/usb_cam/image_raw'
-    IMAGE_PUB_TOPIC = '/usb_cam/ball_isolated'
+    CAM_INFO_TOPIC = '/camera/color/camera_info'
+    RGB_IMAGE_TOPIC = '/camera/color/image_raw'
+    IMAGE_PUB_TOPIC = '/camera/color/ball_isolated'
 
     rospy.init_node('realsense_listener')
     print('initialized node')

@@ -235,22 +235,11 @@ def cluster_segment(img, n_clusters, random_state=0):
 
     return img_u.astype(np.uint8)
 
-def to_blue(rgb_img):
-    return np.dot(rgb_img[... , :3] , [0, 0, 1])
+def to_yellow(rgb_img):
+    return np.dot(rgb_img[... , :3] , [.5, .5, 0])
 
 def to_grayscale(rgb_img):
     return np.dot(rgb_img[... , :3] , [0.299 , 0.587, 0.114])
-
-def isolate_object_of_interest(img):
-    lower_thresh = 55
-    upper_thresh = 255
-    blue_img = to_blue(img)
-    out = np.ones(blue_img.shape)
-    for x in range(out.shape[0]):
-        for y in range(out.shape[1]):
-            if blue_img[x,y] < lower_thresh or blue_img[x,y] > upper_thresh:
-                out[x,y] = 0
-    return out.astype(np.uint8)
 
 def segment_image(img): 
     # ONLY USE ONE SEGMENTATION METHOD

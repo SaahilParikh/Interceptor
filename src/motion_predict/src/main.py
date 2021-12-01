@@ -11,9 +11,15 @@ from __future__ import print_function
 from collections import deque
 
 import rospy
+import math
 
 from geometry_msgs.msg import PoseStamped, Twist
 #from motion_predict.msg import Motion
+#import matplotlib.pyplot as plt
+
+
+#plt.axis([0, 1000, 0, 1])
+#plt.figure()
 
 class KalmanFilter:
 
@@ -40,7 +46,7 @@ class KalmanFilter3D:
   
     def update(self, x, y, z):
         return [self.kx.update(x), self.ky.update(y), self.kz.update(z)]
--0.324061377364721,
+
 def derivative(message, message_prev, field):
     dx = getattr(message.pose.position, field) - getattr(message_prev.pose.position, field)
     dt = message.header.stamp.nsecs - message_prev.header.stamp.nsecs
@@ -52,6 +58,8 @@ def dbl_derivative(msg, msg_prev, msg_prev_prev, field):
     dt = (msg.header.stamp.nsecs - msg_prev_prev.header.stamp.nsecs) / 2
     dt = dt * 1e-9
     return ddx/dt
+
+i= 0
 
 class MotionPredictProcess:
 
@@ -68,12 +76,24 @@ class MotionPredictProcess:
         self.acceleration_kf = KalmanFilter3D(20, 2, 0.001)
 
     def callback(self, message):
+        global i
         print(message)
         self.pos_queue.append(message)
         if len(self.pos_queue) > 3:
             velocity_x = derivative(self.pos_queue[-1], self.pos_queue[-2], 'x')
             velocity_y = derivative(self.pos_queue[-1], self.pos_queue[-2], 'y')
             velocity_z = derivative(self.pos_queue[-1], self.pos_queue[-2], 'z')
+
+            print((velocity_x**2 + velocity_y**2 + velocity_z**2)**0.5)
+            m = 5
+            if abs(velocity_x) > m or abs(velocity_y) > m or abs(velocity_z) > m:
+                return
+            
+            #plt.scatter(i, velocity_z)
+            #plt.pause(0.001)
+            #i = i + 1
+
+            print('instantaneous', [velocity_x, velocity_y, velocity_z])
             velocity = self.velocity_kf.update(velocity_x, velocity_y, velocity_z)
             
             acceleration_x = dbl_derivative(self.pos_queue[-1], self.pos_queue[-2], self.pos_queue[-3], 'x')
@@ -83,6 +103,10 @@ class MotionPredictProcess:
             
             print('velocity:', velocity)
             print('acceleration', acceleration)
+            
+            velocity_angle = math.atan2(velocity_y, velocity_x)
+            y_intercept = self.pos_queue[-1].pose.position.x * math.tan(velocity_angle)
+            print(y_intercept)
  		
             t = Twist()
             t.linear.x = velocity[0]
@@ -96,11 +120,12 @@ class MotionPredictProcess:
             self.motion_pub.publish(t)
 
 def main():
-    POINTS_TOPIC = '/ball_location'
+    POINTS_TOPIC = '/center_point'
     MOTION_PUB_TOPIC = 'motion'
 
     rospy.init_node('motion_predict')
     process = MotionPredictProcess(POINTS_TOPIC, MOTION_PUB_TOPIC)
+    #plt.show(block=True)
     rospy.spin()
 
 if __name__ == '__main__':
