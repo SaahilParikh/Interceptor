@@ -56,7 +56,7 @@ if __name__ == '__main__':
     listener = tf2_ros.TransformListener(tfBuffer)
 
     pub = rospy.Publisher('GoalPose', geometry_msgs.msg.PoseStamped, queue_size=10)
-    rate = rospy.Rate(10.0)
+    rate = rospy.Rate(100.0)
     br = tf2_ros.TransformBroadcaster()
     while not rospy.is_shutdown():
         try:
@@ -67,9 +67,9 @@ if __name__ == '__main__':
             continue
 
         angle = (math.atan2(trans.transform.translation.y, trans.transform.translation.x))
-        velocity = (math.sqrt(trans.transform.translation.x ** 2 + trans.transform.translation.y ** 2))
-        if velocity > 0.2:
-            print('angle', angle/math.pi*180, 'velocity', velocity)
+        # velocity = (math.sqrt(trans.transform.translation.x ** 2 + trans.transform.translation.y ** 2))
+        # if velocity > 0.2:
+        #     print('angle', angle/math.pi*180, 'velocity', velocity)
 
         y_intercept = trans.transform.translation.x * math.tan(angle)
 
