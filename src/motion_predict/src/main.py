@@ -55,15 +55,38 @@ if __name__ == '__main__':
     tfBuffer = tf2_ros.Buffer()
     listener = tf2_ros.TransformListener(tfBuffer)
 
+    pub = rospy.Publisher('GoalPose', geometry_msgs.msg.PoseStamped, queue_size=10)
     rate = rospy.Rate(10.0)
+    br = tf2_ros.TransformBroadcaster()
     while not rospy.is_shutdown():
         try:
             trans = tfBuffer.lookup_transform('ar_marker_5', 'ball_frame', rospy.Time())
-        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
+            print(e)
             rate.sleep()
             continue
 
-        print(math.atan2(trans.transform.translation.y, trans.transform.translation.x))
-        print(math.sqrt(trans.transform.translation.x ** 2 + trans.transform.translation.y ** 2))
+        angle = (math.atan2(trans.transform.translation.y, trans.transform.translation.x))
+        velocity = (math.sqrt(trans.transform.translation.x ** 2 + trans.transform.translation.y ** 2))
+        if velocity > 0.2:
+            print('angle', angle/math.pi*180, 'velocity', velocity)
 
+        y_intercept = trans.transform.translation.x * math.tan(angle)
+
+        t = geometry_msgs.msg.TransformStamped()
+        t.header.stamp = trans.header.stamp
+        t.header.frame_id = "ar_marker_5"
+        t.child_frame_id = "goal"
+        t.transform.translation.x = 0
+        t.transform.translation.y = y_intercept
+        t.transform.rotation.w = 1
+        br.sendTransform(t)
+
+        p = geometry_msgs.msg.PoseStamped()
+        p.header.frame_id = "ar_marker_5"
+        p.header.stamp = trans.header.stamp
+        p.pose.position.x = 0
+        p.pose.position.y = y_intercept
+        pub.publish(p)
         rate.sleep()
+

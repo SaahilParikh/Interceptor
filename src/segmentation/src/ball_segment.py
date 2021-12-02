@@ -1,16 +1,5 @@
 #!/usr/bin/env python
-"""Skeleton code for Lab 6
-Course: EECS C106A, Fall 2019
-Author: Amay Saxena
-
-This file implements a ROS node that subscribes to topics for RGB images,
-pointclouds, and camera calibration info, and uses the functions you
-implemented to publish a segmented pointcloud to the topic /segmented_points.
-
-Once you are confident in your implementation in image_segmentation.py and
-pointcloud_segmentation.py, run this file to begin publishing a segmented
-pointcloud.
-"""
+""" this node publishes the frame of the ball with a parent of the camera_depth_optical_frame"""
 
 from __future__ import print_function
 from collections import deque
@@ -24,7 +13,7 @@ import tf2_geometry_msgs
 
 from sensor_msgs.msg import Image, CameraInfo, PointCloud2
 import sensor_msgs.point_cloud2 as pc2
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, TransformStamped
 
 import numpy as np
 import cv2
@@ -166,6 +155,13 @@ class center_point:
     def __init__(self, points_sub_topic, center_pub_topic, ar_frame):
         self.messages = deque([], 5)
         self.num_steps = 0
+        self.br = tf2_ros.TransformBroadcaster()
+        self.t = TransformStamped()
+        self.t.header.frame_id = "camera_depth_optical_frame"
+        self.t.child_frame_id = "ball_frame"
+        self.t.transform.rotation.w = 1
+
+
         self.pose = PoseStamped()
         self.pose.header.frame_id = "camera_depth_optical_frame"
         self.ar_frame = ar_frame
@@ -190,16 +186,22 @@ class center_point:
                 count += 1
                 center = map(lambda x, y: x+y, center, point)
             x, y, z= (center[0] / count, center[1] / count, center[2] / count)
-            self.pose.header.stamp = rospy.Time.now()
-            self.pose.pose.position.x = x
-            self.pose.pose.position.y = y
-            self.pose.pose.position.z = z
-            output_pose = self.tf_buffer.transform(self.pose, self.ar_frame, rospy.Duration(1))
+            self.t.transform.translation.x = x
+            self.t.transform.translation.y = y
+            self.t.transform.translation.z = z
+            self.t.header.stamp = rospy.Time.now()
+            self.br.sendTransform(self.t)
+
+            # self.pose.header.stamp = rospy.Time.now()
+            # self.pose.pose.position.x = x
+            # self.pose.pose.position.y = y
+            # self.pose.pose.position.z = z
+            # output_pose = self.tf_buffer.transform(self.pose, self.ar_frame, rospy.Duration(0.1))
         except Exception as e:
             rospy.logerr(e)
             return
-        self.num_steps += 1
-        self.messages.appendleft(output_pose)
+        # self.num_steps += 1
+        # self.messages.appendleft(output_pose)
 
     def publish_once_from_queue(self):
         if self.messages:
