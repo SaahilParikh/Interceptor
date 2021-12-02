@@ -119,7 +119,7 @@ add_library(medianFilter src/medianFilter.cpp)
 target_link_libraries(medianFilter ar_track_alvar ${catkin_LIBRARIES})
 add_dependencies(medianFilter ${GENCPP_DEPS})
 
-set(ALVAR_TARGETS ar_track_alvar individualMarkers individualMarkersNoKinect trainMarkerBundle findMarkerBundles findMarkerBundlesNoKinect createMarker ar_track_alvar)
+set(ALVAR_TARGETS ar_track_alvar individualMarkers individualMarkersNoKinect individualMarkersNoKinectSawyer trainMarkerBundle findMarkerBundles findMarkerBundlesNoKinect createMarker ar_track_alvar)
 
 add_executable(individualMarkers nodes/IndividualMarkers.cpp)
 target_link_libraries(individualMarkers ar_track_alvar kinect_filtering ${catkin_LIBRARIES})
@@ -128,6 +128,10 @@ add_dependencies(individualMarkers ${PROJECT_NAME}_gencpp ${GENCPP_DEPS} ${PROJE
 add_executable(individualMarkersNoKinect nodes/IndividualMarkersNoKinect.cpp)
 target_link_libraries(individualMarkersNoKinect ar_track_alvar ${catkin_LIBRARIES})
 add_dependencies(individualMarkersNoKinect ${PROJECT_NAME}_gencpp  ${GENCPP_DEPS} ${PROJECT_NAME}_gencfg)
+
+add_executable(individualMarkersNoKinectSawyer nodes/IndividualMarkersNoKinectSawyer.cpp)
+target_link_libraries(individualMarkersNoKinectSawyer ar_track_alvar ${catkin_LIBRARIES})
+add_dependencies(individualMarkersNoKinectSawyer ${PROJECT_NAME}_gencpp  ${GENCPP_DEPS} ${PROJECT_NAME}_gencfg)
 
 add_executable(trainMarkerBundle nodes/TrainMarkerBundle.cpp)
 target_link_libraries(trainMarkerBundle ar_track_alvar ${catkin_LIBRARIES})
