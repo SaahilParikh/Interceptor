@@ -20,7 +20,7 @@ if __name__ == '__main__':
     rate = rospy.Rate(10.0)
     while loop:
         try: 
-            trans, rot = tf_buffer.lookup_transform("ar_marker2_5", 'base', rospy.Time())
+            t = tf_buffer.lookup_transform("ar_marker2_5", 'base', rospy.Time())
             loop = False
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             rate.sleep()
@@ -28,10 +28,11 @@ if __name__ == '__main__':
 
     static_transformStamped = geometry_msgs.msg.TransformStamped()
 
-    static_transformStamped.header.stamp = rospy.Time.now()
     static_transformStamped.header.frame_id = "ar_marker_5"
     static_transformStamped.child_frame_id = "base"
-    static_transformStamped.transform.translation = trans
-    static_transformStamped.transform.rotation = rot
-    broadcaster.sendTransform(static_transformStamped)
-    rospy.spin()
+    static_transformStamped.transform.translation = t.transform.translation
+    static_transformStamped.transform.rotation = t.transform.rotation
+
+    while not rospy.is_shutdown():
+        static_transformStamped.header.stamp = rospy.Time.now()
+        broadcaster.sendTransform(static_transformStamped)

@@ -56,7 +56,7 @@ if __name__ == '__main__':
     listener = tf2_ros.TransformListener(tfBuffer)
 
     pub = rospy.Publisher('GoalPose', geometry_msgs.msg.PoseStamped, queue_size=10)
-    rate = rospy.Rate(100.0)
+    rate = rospy.Rate(20.0)
     br = tf2_ros.TransformBroadcaster()
     while not rospy.is_shutdown():
         try:
