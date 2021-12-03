@@ -107,6 +107,9 @@ class PathPlanner(object):
 
         return self._group.execute(plan, True)
 
+    def stop_movement(self):
+        return self._group.stop()
+
 
     def add_box_obstacle(self, size, name, pose):
         """

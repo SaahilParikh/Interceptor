@@ -87,12 +87,12 @@ def main():
         
         try: 
             goal = PoseStamped()
-            goal.header.frame_id = "base"
+            goal.header.frame_id = "goal"
 
             goal_transform = tfBuffer.lookup_transform("goal", "base", rospy.Time())
-            goal.pose.position.x = goal_transform.transform.translation.x
-            goal.pose.position.y = goal_transform.transform.translation.y
-            goal.pose.position.z = goal_transform.transform.translation.z
+            goal.pose.position.x = 0
+            goal.pose.position.y = 0
+            goal.pose.position.z = 0.05
 
             #Orientation as a quaternion
             goal.pose.orientation.x = 0
@@ -125,6 +125,7 @@ def main():
     while not rospy.is_shutdown():
         move()
         rate.sleep()
+        #planner.stop_movement()
 
     exit()
     # Wait for messages to arrive on the subscribed topics, and exit the node
