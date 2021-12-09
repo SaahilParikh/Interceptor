@@ -1,0 +1,3 @@
+<launch>
+    <node name="predictor" pkg="motion_predict" type="main.py" respawn="false" output="screen" launch-prefix="xterm -e" />
+</launch>
