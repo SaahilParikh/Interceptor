@@ -13,6 +13,7 @@ from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
 import time
 import numpy as np
+import csv
 
 f = KalmanFilter(dim_x=4, dim_z=2)
 
@@ -22,12 +23,19 @@ f = KalmanFilter(dim_x=4, dim_z=2)
 f.H = np.array([[1, 0, 0, 0],
                 [0, 0, 1, 0]])
 
-f.P *= 1000 # covariance matrix
-f.R = 5 # measurement noise
-
+f.P *= 0.001**2 # covariance matrix
+f.R = np.array([
+    [0.00054097**2, 0],
+    [0, 0.00103866**2],
+]) # measurement noise
 
 
 if __name__ == '__main__':
+
+    csv_file = open('out.txt', 'wb')
+    writer = csv.writer(csv_file)
+    writer.writerow(['x', 'y', 'kx', 'ky', 'kvx', 'kvy'])
+
     rospy.init_node('motion_predict')
 
     tfBuffer = tf2_ros.Buffer()
@@ -43,7 +51,13 @@ if __name__ == '__main__':
     goals = list(np.zeros(20))
  
     counter = 0
-    last_time = time.time()
+
+    y_intercept = 0
+
+    positions = None
+
+    last_time = rospy.Time.now()
+
     while not rospy.is_shutdown():
         try:
             trans = tfBuffer.lookup_transform('ar_marker_6', 'ball_frame', rospy.Time())
@@ -55,23 +69,31 @@ if __name__ == '__main__':
             rate.sleep()
             continue
 
+        dt = (trans.header.stamp - last_time).to_sec()
+        last_time = trans.header.stamp
+        if dt == 0:
+            continue
+
         # https://dsp.stackexchange.com/questions/26115/kalman-filter-to-estimate-3d-position-of-a-node
-        dt = ctime - last_time
-        last_time = ctime
+        # dt = ctime - last_time
+        # last_time = ctime
         f.F = np.array([[1, dt,  0,  0],
                       [0,  1,  0,  0],
                       [0,  0,  1, dt],
                       [0,  0,  0,  1]])
+        f.Q = Q_discrete_white_noise(dim=4, dt=dt, var=.0005)
 
         # f.B = np.array([dt**2/2, dt, dt**2/2, dt])
-        # f.Q = Q_discrete_white_noise(dim=4, dt=dt, var=.05)
-
         nx, ny = trans.transform.translation.x, trans.transform.translation.y
-        xs.pop(0)
-        ys.pop(0)
-        xs.append(nx)
-        ys.append(ny)
-        z = np.array([np.mean(xs), np.mean(ys)])
+        z = np.array([nx, ny])
+
+        # PRINT STD OF DATA
+        # if positions is None:
+        #     positions = np.array([z])
+        # else:
+        #     positions = np.vstack([positions, z])
+        # print(np.std(positions, axis=0))
+
         f.predict()
         f.update(z)
 
@@ -89,6 +111,7 @@ if __name__ == '__main__':
         else:
             y_int = y
 
+        writer.writerow([nx, ny, x[0], y[0], vx[0], vy[0]])
 
         if (y_int - np.mean(goals) < .2):
             y_intercept = y_int
@@ -99,9 +122,12 @@ if __name__ == '__main__':
         t.header.stamp = trans.header.stamp
         t.header.frame_id = "ar_marker_6"
         t.child_frame_id = "goal"
-        t.transform.translation.x = 0
-        t.transform.translation.y = y_intercept
+        # t.transform.translation.x = 0
+        # t.transform.translation.y = y_intercept
+
+        t.transform.translation.x = x
         t.transform.rotation.w = 1
+        t.transform.translation.y = y
         br.sendTransform(t)
 
         p = geometry_msgs.msg.PoseStamped()
