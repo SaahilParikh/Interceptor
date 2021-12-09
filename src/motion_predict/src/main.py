@@ -23,7 +23,7 @@ f = KalmanFilter(dim_x=4, dim_z=2)
 f.H = np.array([[1, 0, 0, 0],
                 [0, 0, 1, 0]])
 
-f.P *= 0.1**2 # covariance matrix
+f.P *= 0.05**2 # covariance matrix
 f.R = np.array([
     [0.001**2, 0],
     [0, 0.001**2],
@@ -105,7 +105,7 @@ if __name__ == '__main__':
         #     print('angle', angle/math.pi*180, 'velocity', velocity)
 
         # print(f.x, v_angle, velocity)      
-        if (velocity > .01):
+        if (velocity > .1):
             y_int = -x * math.tan(v_angle) + y
         else:
             y_int = y
