@@ -23,10 +23,10 @@ f = KalmanFilter(dim_x=4, dim_z=2)
 f.H = np.array([[1, 0, 0, 0],
                 [0, 0, 1, 0]])
 
-f.P *= 0.001**2 # covariance matrix
+f.P *= 0.1**2 # covariance matrix
 f.R = np.array([
-    [0.00054097**2, 0],
-    [0, 0.00103866**2],
+    [0.001**2, 0],
+    [0, 0.001**2],
 ]) # measurement noise
 
 
@@ -81,7 +81,7 @@ if __name__ == '__main__':
                       [0,  1,  0,  0],
                       [0,  0,  1, dt],
                       [0,  0,  0,  1]])
-        f.Q = Q_discrete_white_noise(dim=4, dt=dt, var=.0005)
+        f.Q = Q_discrete_white_noise(dim=2, dt=dt, var=.0005, block_size=2)
 
         # f.B = np.array([dt**2/2, dt, dt**2/2, dt])
         nx, ny = trans.transform.translation.x, trans.transform.translation.y
@@ -105,35 +105,33 @@ if __name__ == '__main__':
         #     print('angle', angle/math.pi*180, 'velocity', velocity)
 
         # print(f.x, v_angle, velocity)      
-        counter += 1
-        if (velocity < .01):
+        if (velocity > .01):
             y_int = -x * math.tan(v_angle) + y
         else:
             y_int = y
 
+        print(velocity)
         writer.writerow([nx, ny, x[0], y[0], vx[0], vy[0]])
-
-        if (y_int - np.mean(goals) < .2):
-            y_intercept = y_int
-        goals.pop(0)
-        goals.append(y_int)
 
         t = geometry_msgs.msg.TransformStamped()
         t.header.stamp = trans.header.stamp
         t.header.frame_id = "ar_marker_6"
         t.child_frame_id = "goal"
-        # t.transform.translation.x = 0
-        # t.transform.translation.y = y_intercept
-
-        t.transform.translation.x = x
+        t.transform.translation.x = 0
+        t.transform.translation.y = y_int
         t.transform.rotation.w = 1
+        br.sendTransform(t)
+
+        t.child_frame_id = "est_ball"
+        t.transform.translation.x = x
         t.transform.translation.y = y
         br.sendTransform(t)
+
 
         p = geometry_msgs.msg.PoseStamped()
         p.header.frame_id = "ar_marker_6"
         p.header.stamp = trans.header.stamp
         p.pose.position.x = 0
-        p.pose.position.y = y_intercept
+        p.pose.position.y = y_int
         pub.publish(p)
         rate.sleep()
