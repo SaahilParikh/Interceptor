@@ -63,7 +63,7 @@ if __name__ == '__main__':
     initLoop = 1
     while initLoop:
         try:
-            trans = tfBuffer.lookup_transform('ar_marker_5', 'ball_frame', rospy.Time())
+            trans = tfBuffer.lookup_transform('ar_marker_8', 'ball_frame', rospy.Time())
             initLoop = 0
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
             rate.sleep()
@@ -77,7 +77,7 @@ if __name__ == '__main__':
 
     while not rospy.is_shutdown():
         try:
-            trans = tfBuffer.lookup_transform('ar_marker_5', 'ball_frame', rospy.Time())
+            trans = tfBuffer.lookup_transform('ar_marker_8', 'ball_frame', rospy.Time())
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
             print(e)
             rate.sleep()
@@ -107,7 +107,7 @@ if __name__ == '__main__':
         # creating the message.
         t = geometry_msgs.msg.TransformStamped()
         t.header.stamp = trans.header.stamp
-        t.header.frame_id = "ar_marker_5"
+        t.header.frame_id = "ar_marker_8"
         t.child_frame_id = "goal"
         t.transform.translation.x = 0
         t.transform.translation.y = y_intercept

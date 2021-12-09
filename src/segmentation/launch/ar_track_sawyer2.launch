@@ -4,11 +4,11 @@
     <arg name="max_new_marker_error" default="0.005" />
     <arg name="max_track_error"      default="0.005" />
 
-    <arg name="cam_image_topic"      default="/camera/color/image_raw" />
-    <arg name="cam_info_topic"       default="/camera/color/camera_info" />
-    <arg name="output_frame"         default="/camera_color_optical_frame" />
+    <arg name="cam_image_topic"      default="/io/internal_camera/right_hand_camera/image_raw" />
+    <arg name="cam_info_topic"       default="/io/internal_camera/right_hand_camera/camera_info" />
+    <arg name="output_frame"         default="/right_hand_camera" />
 
-    <node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen"  >
+    <node name="ar_track_alvar_sawyer" pkg="ar_track_alvar" type="individualMarkersNoKinectSawyer" respawn="false" output="screen" launch-prefix="xterm -e">
 		<param name="marker_size"           type="double" value="$(arg marker_size)" />
 		<param name="max_new_marker_error"  type="double" value="$(arg max_new_marker_error)" />
 		<param name="max_track_error"       type="double" value="$(arg max_track_error)" />

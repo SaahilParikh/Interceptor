@@ -217,7 +217,7 @@ def main():
     POINTS_PUB_TOPIC = 'segmented_points'
     CENTER_PUB_TOPIC = 'center_point'
     camera_frame = 'camera_color_optical_frame'
-    table_frame = 'ar_marker_5'
+    table_frame = 'ar_marker_6'
 
     rospy.init_node('realsense_listener')
     process = PointcloudProcess(POINTS_TOPIC, RGB_IMAGE_TOPIC,

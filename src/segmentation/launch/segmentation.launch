@@ -1,0 +1,3 @@
+<launch>
+    <node name="segmentator" pkg="segmentation" type="ball_segment.py" respawn="false" output="screen" launch-prefix="xterm -e" />
+</launch>

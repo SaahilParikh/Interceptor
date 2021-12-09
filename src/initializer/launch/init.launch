@@ -1,0 +1,3 @@
+<launch>
+    <node name="base_to_marker5" pkg="initializer" type="init.py" respawn="false" output="screen" launch-prefix="xterm -e" />
+</launch>

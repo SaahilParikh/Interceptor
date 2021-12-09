@@ -78,6 +78,54 @@ def main():
 
     planner.add_box_obstacle(np.array(size), "table", table)
 
+    q_s = [-0.5, 0.0, 0.00]
+    w_s = [0.00, -1.00, 0.00, 0.00]
+    size_s = [.3, 3.0, 3.0]
+    
+    wall_side = PoseStamped()
+    wall_side.header.frame_id = "base"
+
+    #x, y, and z position
+    wall_side.pose.position.x = q_s[0]
+    wall_side.pose.position.y = q_s[1]
+    wall_side.pose.position.z = q_s[2]
+
+    wall_side.pose.orientation.x = w_s[0]
+    wall_side.pose.orientation.y = w_s[1]
+    wall_side.pose.orientation.z = w_s[2]
+    wall_side.pose.orientation.w = w_s[3]
+
+    planner.add_box_obstacle(np.array(size_s), "side_wall", wall_side)
+
+    q_b = [0.0, 0.7, 0.00]
+    w_b = [0.00, -1.00, 0.00, 0.00]
+    size_b = [3.0, .3, 3.0]
+    
+    wall_back = PoseStamped()
+    wall_back.header.frame_id = "base"
+
+    #x, y, and z position
+    wall_back.pose.position.x = q_b[0]
+    wall_back.pose.position.y = q_b[1]
+    wall_back.pose.position.z = q_b[2]
+
+    wall_back.pose.orientation.x = w_b[0]
+    wall_back.pose.orientation.y = w_b[1]
+    wall_back.pose.orientation.z = w_b[2]
+    wall_back.pose.orientation.w = w_b[3]
+
+    planner.add_box_obstacle(np.array(size_b), "back_wall", wall_back)
+
+    orien_const = OrientationConstraint()
+    orien_const.link_name = "right_gripper"
+    orien_const.header.frame_id = "base"
+    orien_const.orientation.y = -1.0
+    orien_const.absolute_x_axis_tolerance = 0.1
+    orien_const.absolute_y_axis_tolerance = 0.1
+    orien_const.absolute_z_axis_tolerance = 0.1
+    orien_const.weight = 1.0
+
+
     raw_input(bcolors.HEADER + bcolors.UNDERLINE + bcolors.BOLD + "[ACTION REQUIRED] CLICK ENTER TO START" + bcolors.ENDC)
     transform_base_to_gripper = get_table()
 
@@ -104,7 +152,7 @@ def main():
                 print(bcolors.OKBLUE + "[LOGGER] project_path: Goal Pose set to:\n" + str(goal) + bcolors.ENDC)
 
             # Might have to edit this . . . 
-            plan = planner.plan_to_pose(goal, [])
+            plan = planner.plan_to_pose(goal, [orien_const])
 
             #raw_input("Press <Enter> to move the right arm to position: {p} and orientation: {q}")
             if not poopoo.execute_path(plan, log=False):
