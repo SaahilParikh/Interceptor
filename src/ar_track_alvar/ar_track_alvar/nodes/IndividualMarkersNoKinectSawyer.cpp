@@ -75,6 +75,11 @@ std::string output_frame;
 int marker_resolution = 5; // default marker resolution
 int marker_margin = 2; // default marker margin
 
+
+// to stop running after the ar marker has been found
+bool stop_looping = false;
+int count = 0;
+
 void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg);
 
 
@@ -207,6 +212,10 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 			    ar_pose_marker.id = id;
 			    arPoseMarkers_.markers.push_back (ar_pose_marker);
 			}
+            counter = counter + 1;
+            if (counter > 10) {
+                stop_looping = true;
+            }
 			arMarkerPub_.publish (arPoseMarkers_);
 		}
         catch (cv_bridge::Exception& e){
@@ -323,7 +332,7 @@ int main(int argc, char *argv[])
   ros::Subscriber enable_sub_ = pn.subscribe("enable_detection", 1, &enableCallback);
 
   enableSwitched = true;
-  while (ros::ok())
+  while (ros::ok() && !stop_looping)
   {
     ros::spinOnce();
     rate.sleep();
