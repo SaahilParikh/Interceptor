@@ -3,10 +3,6 @@
     <include file="$(find segmentation)/launch/ar_track2.launch" />
     <include file="$(find segmentation)/launch/ar_track_sawyer2.launch" />
     <include file="$(find initializer)/launch/init.launch" />
-
-    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
-        <arg name="filters" value="pointcloud" />
-    </include>
     <include file="$(find motion_predict)/launch/init.launch" />
 </launch>
 

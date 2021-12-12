@@ -1,4 +1,5 @@
-<launch>
-    <node name=""
-
+<launch>       
+    <node name="ik" pkg="ik" type="project_path_update.py" respawn="false" output="screen" >
+        <rosparam command="load" file="src/ik/config/kinematics.yaml"/>
+    </node>    
 </launch>

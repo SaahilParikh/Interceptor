@@ -4,17 +4,13 @@ Path Planning Script for Lab 7
 """
 import sys
 from genpy import message
-assert sys.argv[1] in ("sawyer", "baxter")
-ROBOT = sys.argv[1]
+ROBOT = "sawyer"
 
 import tf2_ros
 
-if ROBOT == "baxter":
-    from baxter_interface import Limb
-else:
-    from intera_interface import Limb
+from intera_interface import Limb
 
-
+from os import system, name
 import rospy
 import numpy as np
 import traceback
@@ -129,17 +125,18 @@ def main():
     raw_input(bcolors.HEADER + bcolors.UNDERLINE + bcolors.BOLD + "[ACTION REQUIRED] CLICK ENTER TO START" + bcolors.ENDC)
     transform_base_to_gripper = get_table()
 
+    y_list = [0 for i in range(5)]
+
     def move():
         if(LOG):
             print(bcolors.OKGREEN + "[LOGGER] project_path: Moving Baxter's Arm" + bcolors.ENDC)
         
         try: 
             goal = PoseStamped()
-            goal.header.frame_id = "goal"
+            goal.header.frame_id = "ar_marker_6"
 
-            goal_transform = tfBuffer.lookup_transform("goal", "base", rospy.Time())
-            goal.pose.position.x = 0
-            goal.pose.position.y = 0
+            goal.pose.position.x = x_place
+            goal.pose.position.y = y_list[-1]
             goal.pose.position.z = 0.05
 
             #Orientation as a quaternion
@@ -152,33 +149,58 @@ def main():
                 print(bcolors.OKBLUE + "[LOGGER] project_path: Goal Pose set to:\n" + str(goal) + bcolors.ENDC)
 
             # Might have to edit this . . . 
-            plan = planner.plan_to_pose(goal, [orien_const])
+            plan = planner.plan_to_pose(goal, [])
 
             #raw_input("Press <Enter> to move the right arm to position: {p} and orientation: {q}")
             if not poopoo.execute_path(plan, log=False):
                 raise Exception("Execution failed")
+            else:
+                return y_list[-1]
         except Exception as e:
             print(e)
             traceback.print_exc()
+        
         if(LOG):
             print(bcolors.OKGREEN + "[LOGGER] project_path: Move Finished" + bcolors.ENDC)
-        return
+        
+        return None
 
     # Create a new instance of the rospy.Subscriber object which we can use to
     # receive messages of type std_msgs/String from the topic /chatter_talk.
     # Whenever a new message is received, the method callback() will be called
     # with the received message as its first argument.
     
-    rate = rospy.Rate(20)
+    rate = rospy.Rate(50)
+    goal_transform = get_goal()
+    x_place = goal_transform.transform.translation.x
+    last_y = 0
+    i = 0
     while not rospy.is_shutdown():
-        move()
+        goal_transform = get_goal()
+        y_list.append(-goal_transform.transform.translation.y)
+        y_list.pop(0)
+        if (np.std(y_list) < 0.1 and abs(last_y - np.mean(y_list)) > 0.08):
+            print("Move")
+            new_y = move()
+            if new_y is not None:
+                last_y = new_y
         rate.sleep()
         #planner.stop_movement()
 
     exit()
     # Wait for messages to arrive on the subscribed topics, and exit the node
     # when it is killed with Ctrl+C
-    
+
+
+def get_goal():
+    while True:
+        try:
+            trans = tfBuffer.lookup_transform("goal", "ar_marker_6", rospy.Time())
+            return trans
+
+        except (tf2_ros.LookupException,tf2_ros.ConnectivityException,tf2_ros.ExtrapolationException) as e:
+            print(e)
+        rospy.sleep(1)
 
 def get_table():
     while True:

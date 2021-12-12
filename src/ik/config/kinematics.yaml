@@ -1,0 +1,3 @@
+right_arm:
+  kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+  solve_type: distance

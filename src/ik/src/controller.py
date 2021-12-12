@@ -225,9 +225,13 @@ class Controller(object):
             target_velocity = target_velocity_low + (t - time_low)/(time_high - time_low)*(target_velocity_high - target_velocity_low)
 
         else:
-            target_position = np.array(self._path.joint_trajectory.points[self._curIndex].positions)
+            target_position = "this"
+            try:
+                target_position = np.array(self._path.joint_trajectory.points[self._curIndex].positions)
+            except IndexError as e:
+                print(self._path.joint_trajectory.points)
             target_velocity = np.array(self._path.joint_trajectory.points[self._curIndex].velocities)
-
+        
         # For Plotting
         self._times.append(t)
         self._actual_positions.append(current_position)
